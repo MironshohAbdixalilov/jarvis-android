@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#08111f">
+  <title>JARVIS</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div class="mark">J</div>
+      <div><h1>JARVIS</h1><p id="status">Tayyor. Buyruqni yozing yoki gapiring.</p></div>
+      <span class="live" id="live">● OFFLINE</span>
+    </header>
+
+    <section class="orb-wrap">
+      <button id="mic" class="orb" aria-label="Ovoz bilan buyruq berish">
+        <span class="orb-core"></span><span class="orb-ring"></span>
+      </button>
+      <div class="hint" id="hint">Mikrofon tugmasini bosing</div>
+    </section>
+
+    <section class="chat" id="chat" aria-live="polite">
+      <div class="msg bot">Assalomu alaykum. Men JARVIS interfeysining birinchi versiyasiman. Hozircha ovozni matnga aylantirish, javobni ovoz chiqarib o‘qish va oddiy telefon buyruqlarini bajarishni sinay olaman.</div>
+    </section>
+
+    <form id="form" class="composer">
+      <input id="input" autocomplete="off" placeholder="Buyruq yozing..." />
+      <button type="submit">Yuborish</button>
+    </form>
+
+    <section class="quick">
+      <button data-cmd="Soat necha?">Soat</button>
+      <button data-cmd="Bugungi sanani ayt">Sana</button>
+      <button data-cmd="YouTube'ni och">YouTube</button>
+      <button data-cmd="Google'ni och">Google</button>
+    </section>
+    <footer>JARVIS • Android uchun boshlang‘ich versiya</footer>
+  </main>
+  <script src="app.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+  </script>
+</body>
+</html>
