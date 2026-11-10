@@ -1,0 +1,30 @@
+JARVIS AI BACKENDNI SOZLASH
+
+Bu bosqich GitHub Pages saytiga haqiqiy AI suhbatini ulash uchun kerak.
+OpenAI API kalitini GitHub fayllariga yoki app.js ichiga yozmang.
+
+1) Cloudflare hisobiga kiring: https://dash.cloudflare.com/
+2) Workers & Pages bo‘limini oching.
+3) Create application / Create Worker ni tanlang va Worker yarating.
+4) Worker muharriridagi namunaviy kodni o‘chirib, repository ichidagi worker.js faylining to‘liq matnini joylang. Deploy qiling.
+5) Worker → Settings → Variables and Secrets bo‘limidan quyidagi ikkita qiymatni SECRET turi bilan qo‘shing:
+   - OPENAI_API_KEY = OpenAI platformasidan olgan API kalitingiz
+   - JARVIS_ACCESS_CODE = o‘zingiz yaratgan uzun, maxfiy ulash kodi
+   Kodni boshqa parollaringiz bilan bir xil qilmang. Uni hech kimga yubormang.
+   So‘ng Deploy tugmasini bosing.
+6) OpenAI API kalitini https://platform.openai.com/api-keys sahifasidan yaratish mumkin. API ishlatish ChatGPT obunasidan alohida hisoblanadi.
+7) Worker manzili odatda https://worker-nomi.account-nomi.workers.dev ko‘rinishida bo‘ladi.
+8) Telefonda JARVIS saytini yangilang. AI ulash tugmasini bosing va Worker HTTPS manzili hamda JARVIS_ACCESS_CODE qiymatini kiriting.
+9) Oddiy savol yozib sinang.
+
+MODEL:
+Worker standart holatda gpt-6-luna modelidan foydalanadi. O‘zgartirish kerak bo‘lsa, Cloudflare'da OPENAI_MODEL nomli oddiy text variable qo‘shing.
+
+XAVFSIZLIK:
+- OPENAI_API_KEY ni GitHub repository'ga qo‘ymang.
+- API kalitini chatga yubormang.
+- Worker kirish kodi ham maxfiy bo‘lsin.
+- Agar kalit oshkor bo‘lsa, OpenAI platformasidan uni bekor qilib yangisini yarating.
+
+ESLATMA:
+O‘zbekcha matn javobi AI tomonidan yaratiladi. Ovozning talaffuzi esa Android/Chrome qurilmadagi ovoz dvigateliga bog‘liq. Tabiiy AI ovozini keyin alohida ulash mumkin.
