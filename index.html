@@ -24,7 +24,7 @@
     </section>
 
     <section class="chat" id="chat" aria-live="polite">
-      <div class="msg bot">Assalomu alaykum. Men JARVISman. Buyruq bering yoki savolingizni yozing. AI server ulangach, siz bilan erkin suhbatlasha olaman.</div>
+      <div class="msg bot">Assalomu alaykum. Men JARVISman. Buyruq bering yoki savolingizni yozing.</div>
     </section>
 
     <form id="form" class="composer">
@@ -39,6 +39,23 @@
       <button data-cmd="Google'ni och">Google</button>
       <button id="settings" type="button">AI ulash</button>
     </section>
+
+    <section id="settingsPanel" class="settings-backdrop" hidden>
+      <form id="settingsForm" class="settings-card">
+        <h2>AI server sozlamasi</h2>
+        <label for="workerUrl">Cloudflare Worker HTTPS manzili</label>
+        <input id="workerUrl" type="url" placeholder="https://jarvis-api.username.workers.dev" required>
+        <label for="accessCode">Maxfiy ulash kodi</label>
+        <input id="accessCode" type="password" placeholder="Cloudflare JARVIS_ACCESS_CODE" required autocomplete="off">
+        <p id="settingsError" class="settings-error" role="alert"></p>
+        <div class="settings-actions">
+          <button type="button" id="cancelSettings" class="secondary">Bekor</button>
+          <button type="submit">Saqlash</button>
+        </div>
+        <p class="settings-note">Bu ma’lumotlar faqat shu telefonda saqlanadi. OpenAI API kalitini bu yerga kiritmang.</p>
+      </form>
+    </section>
+
     <footer>JARVIS • Android AI yordamchisi</footer>
   </main>
   <script src="app.js"></script>
