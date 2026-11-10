@@ -44,9 +44,7 @@ function speak(text) {
     const uzVoice = voices.find(v => /^uz([_-]|$)/i.test(v.lang));
     if (uzVoice) utterance.voice = uzVoice;
     speechSynthesis.speak(utterance);
-  } catch (_) {
-    // TTS is optional; text replies still work if the device has no voice engine.
-  }
+  } catch (_) {}
 }
 
 function setStatus(text, liveText) {
@@ -56,7 +54,6 @@ function setStatus(text, liveText) {
 
 function getLocalAnswer(command) {
   const q = command.toLowerCase().trim();
-
   if (/soat|vaqt/.test(q)) {
     return "Hozirgi vaqt: " + new Intl.DateTimeFormat("uz-UZ", {
       hour: "2-digit", minute: "2-digit"
@@ -75,9 +72,7 @@ function getLocalAnswer(command) {
     window.open("https://www.google.com", "_blank", "noopener");
     return "Google ochilmoqda.";
   }
-  if (/salom|assal/.test(q)) {
-    return "Va alaykum assalom. Sizni tinglayapman.";
-  }
+  if (/salom|assal/.test(q)) return "Va alaykum assalom. Sizni tinglayapman.";
   if (/yordam|nima qila/.test(q)) {
     return "Vaqt va sanani aytaman, Google va YouTube'ni ochaman. AI server ulangach, boshqa savollarga ham javob bera olaman.";
   }
@@ -91,39 +86,45 @@ function getConfig() {
   };
 }
 
-function configureAI() {
-  const current = getConfig();
-  const enteredUrl = prompt(
-    "Cloudflare Worker HTTPS manzilini kiriting. Masalan: https://jarvis-api.username.workers.dev",
-    current.url
-  );
-  if (enteredUrl === null) return;
+function openSettings() {
+  const config = getConfig();
+  $("#workerUrl").value = config.url;
+  $("#accessCode").value = config.code;
+  $("#settingsPanel").hidden = false;
+  $("#settingsError").textContent = "";
+  $("#workerUrl").focus();
+}
 
-  const url = enteredUrl.trim().replace(/\/+$/, "");
+function closeSettings() {
+  $("#settingsPanel").hidden = true;
+}
+
+$("#settings").addEventListener("click", openSettings);
+$("#cancelSettings").addEventListener("click", closeSettings);
+$("#settingsForm").addEventListener("submit", event => {
+  event.preventDefault();
+  const url = $("#workerUrl").value.trim().replace(/\/+$/, "");
+  const code = $("#accessCode").value.trim();
+
   if (!url || !/^https:\/\/[a-z0-9.-]+(?::\d+)?(?:\/.*)?$/i.test(url)) {
-    add("Manzil noto‘g‘ri. HTTPS bilan boshlanadigan Worker manzilini kiriting.");
+    $("#settingsError").textContent = "Worker manzili https:// bilan boshlanishi kerak.";
     return;
   }
-
-  const code = prompt(
-    "Cloudflare'da JARVIS_ACCESS_CODE nomi bilan saqlagan maxfiy kodni kiriting.",
-    current.code
-  );
-  if (code === null) return;
-  if (!code.trim()) {
-    add("Maxfiy kod bo‘sh bo‘lmasligi kerak.");
+  if (!code) {
+    $("#settingsError").textContent = "Maxfiy ulash kodini kiriting.";
     return;
   }
 
   localStorage.setItem(API_URL_KEY, url);
-  localStorage.setItem(ACCESS_KEY, code.trim());
-  add("AI server manzili va ulash kodi telefonda saqlandi. Endi savol berib sinang.");
-}
+  localStorage.setItem(ACCESS_KEY, code);
+  closeSettings();
+  add("Sozlamalar saqlandi. Endi savol yozib AI ulanishini tekshiring.");
+});
 
-async function askAI(command) {
+async function askAI() {
   const config = getConfig();
   if (!config.url || !config.code) {
-    add("Haqiqiy AI hali ulanmagan. Avval «AI ulash» tugmasidan Worker manzili va maxfiy kodni kiriting.");
+    add("AI server hali sozlanmagan. «AI ulash» tugmasini bosing va Worker manzili hamda maxfiy kodni kiriting.");
     return;
   }
 
@@ -138,33 +139,19 @@ async function askAI(command) {
       body: JSON.stringify({ messages: history.slice(-12) })
     });
 
-    let data = {};
-    try { data = await response.json(); } catch (_) {}
-    if (!response.ok) {
-      const reason = data.error || ("Server xatosi: " + response.status);
-      throw new Error(reason);
-    }
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || ("Server xatosi: " + response.status));
     if (typeof data.reply !== "string" || !data.reply.trim()) {
       throw new Error("Serverdan bo‘sh javob keldi.");
     }
 
     add(data.reply.trim());
     speak(data.reply.trim());
-    setStatus("Tayyor. Yana buyruq bering.", "● AI READY");
+    setStatus("Tayyor.", "● AI READY");
   } catch (error) {
     add("AI ulanish xatosi: " + (error && error.message ? error.message : "Noma’lum xato"));
     setStatus("AI server bilan aloqa yo‘q.", "● ERROR");
   }
-}
-
-async function reply(command) {
-  const localAnswer = getLocalAnswer(command);
-  if (localAnswer) {
-    add(localAnswer);
-    speak(localAnswer);
-    return;
-  }
-  await askAI(command);
 }
 
 async function send(text) {
@@ -174,10 +161,10 @@ async function send(text) {
   add(value, "user");
   input.value = "";
 
-  const local = getLocalAnswer(value);
-  if (local) {
-    add(local);
-    speak(local);
+  const localAnswer = getLocalAnswer(value);
+  if (localAnswer) {
+    add(localAnswer);
+    speak(localAnswer);
     return;
   }
 
@@ -185,22 +172,20 @@ async function send(text) {
   input.disabled = true;
   const submit = $("#form button[type='submit']");
   if (submit) submit.disabled = true;
-  await askAI(value);
+  await askAI();
   busy = false;
   input.disabled = false;
   if (submit) submit.disabled = false;
   input.focus();
 }
 
-$("#form").addEventListener("submit", e => {
-  e.preventDefault();
+$("#form").addEventListener("submit", event => {
+  event.preventDefault();
   send(input.value);
 });
 document.querySelectorAll("[data-cmd]").forEach(button => {
   button.addEventListener("click", () => send(button.dataset.cmd));
 });
-const settingsButton = $("#settings");
-if (settingsButton) settingsButton.addEventListener("click", configureAI);
 
 if (Recognition) {
   recognition = new Recognition();
@@ -221,8 +206,8 @@ if (Recognition) {
     $("#hint").textContent = "Mikrofon tugmasini bosing";
     $("#live").textContent = getConfig().url ? "● AI READY" : "● READY";
   };
-  recognition.onerror = e => add("Mikrofon xatosi: " + e.error + ". Brauzer ruxsatini tekshiring.");
-  recognition.onresult = e => send(e.results[0][0].transcript);
+  recognition.onerror = event => add("Mikrofon xatosi: " + event.error + ". Brauzer ruxsatini tekshiring.");
+  recognition.onresult = event => send(event.results[0][0].transcript);
   mic.addEventListener("click", () => {
     if (listening) recognition.stop();
     else {
