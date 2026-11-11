@@ -4,7 +4,7 @@ const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const HISTORY_KEY = "jarvis_chat_history_v2";
 const API_URL_KEY = "jarvis_api_url";
 const ACCESS_KEY = "jarvis_access_code";
-let recognition = null, listening = false, busy = false;
+let recognition = null, listening = false, busy = false, speechRequestId = 0;
 let history = [];
 
 try {
@@ -33,18 +33,69 @@ function restoreHistory() {
 }
 restoreHistory();
 
-function speak(text) {
-  if (!("speechSynthesis" in window)) return;
+function isUzbekVoice(voice) {
+  return /^uz(?:[-_]|$)/i.test(voice.lang || "");
+}
+
+function getSpeechVoices(timeoutMs = 1200) {
+  const voices = speechSynthesis.getVoices();
+  if (voices.some(isUzbekVoice)) return Promise.resolve(voices);
+
+  return new Promise(resolve => {
+    let resolved = false;
+    const finish = availableVoices => {
+      if (resolved) return;
+      resolved = true;
+      clearInterval(pollId);
+      clearTimeout(timeoutId);
+      if (canListen) speechSynthesis.removeEventListener("voiceschanged", checkVoices);
+      resolve(availableVoices);
+    };
+    const checkVoices = () => {
+      const availableVoices = speechSynthesis.getVoices();
+      if (availableVoices.some(isUzbekVoice)) finish(availableVoices);
+    };
+    const canListen = typeof speechSynthesis.addEventListener === "function" &&
+      typeof speechSynthesis.removeEventListener === "function";
+    const pollId = setInterval(checkVoices, 100);
+    const timeoutId = setTimeout(() => finish(speechSynthesis.getVoices()), timeoutMs);
+    if (canListen) speechSynthesis.addEventListener("voiceschanged", checkVoices);
+    checkVoices();
+  });
+}
+
+async function speak(text) {
+  if (!("speechSynthesis" in window)) {
+    add("Qurilmada o‘zbekcha TTS ovozi mavjud emas: bu brauzer ovoz chiqarishni qo‘llamaydi.");
+    return;
+  }
+
+  const requestId = ++speechRequestId;
   try {
     speechSynthesis.cancel();
+    const voices = await getSpeechVoices();
+    if (requestId !== speechRequestId) return;
+
+    const uzVoice = voices.find(isUzbekVoice);
+    if (!uzVoice) {
+      const languages = [...new Set(voices.map(v => (v.lang || "").trim()).filter(Boolean))].sort();
+      const available = languages.length
+        ? "Aniqlangan ovoz tillari: " + languages.join(", ") + "."
+        : "Brauzer ovozlar ro‘yxatini aniqlamadi.";
+      add("Qurilmada o‘zbekcha TTS ovozi mavjud emas. " + available +
+        " Android sozlamalaridan o‘zbekcha ovozni o‘rnating.");
+      return;
+    }
+
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "uz-UZ";
-    utterance.rate = 0.95;
-    const voices = speechSynthesis.getVoices();
-    const uzVoice = voices.find(v => /^uz([_-]|$)/i.test(v.lang));
-    if (uzVoice) utterance.voice = uzVoice;
+    utterance.voice = uzVoice;
+    utterance.lang = uzVoice.lang || "uz-UZ";
+    utterance.rate = 0.9;
     speechSynthesis.speak(utterance);
-  } catch (_) {}
+  } catch (_) {
+    if (requestId !== speechRequestId) return;
+    add("O‘zbekcha TTS ovozini aniqlab bo‘lmadi. Qurilmada o‘zbekcha matnni ovozga aylantirish ovozi borligini tekshiring.");
+  }
 }
 
 function setStatus(text, liveText) {
